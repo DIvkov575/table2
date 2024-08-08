@@ -12,6 +12,7 @@ fn main() {
     table.set_element("new_foo".to_string(), 2, 1).unwrap();
     table.printstd();
     
-    let mut table = table!(["A", "B", "C"], [1, 2, 3]);
+    let table = table!(["A", "B", "C"], [1, 2, 3]);
     table.printstd();
+//    println!("{:?}", table);
 }

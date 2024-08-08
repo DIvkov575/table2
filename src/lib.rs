@@ -1,7 +1,11 @@
 //! A formatted and aligned table printer written in rust
-use std::io::{stdout, Write, Error};
+use std::io::{stdout, Write, Error, ErrorKind};
+use std::fmt;
+use std::str;
+use std::string::ToString;
 
 /// A Struct representing a printable table
+#[derive(Clone, Debug)]
 pub struct Table {
 	num_cols: usize,
 	titles: Vec<String>,
@@ -26,19 +30,11 @@ impl Table {
 	}
 	
 	/// Change separators
+	/// 
 	/// `col` is the column separator
 	/// `line` is the line separator
 	/// `cross` is a special separator used when line and collumn separators meet
-	/// Default separators used are '|', '-' and '+' so a table looks like this :
-	/// ```text
-	/// +---------+------+
-	/// | ABC     | DEFG |
-	/// +---------+------+
-	/// | foobar  | bar  |
-	/// +---------+------+
-	/// | foobar2 | bar2 |
-	/// +---------+------+
-	/// ```
+	/// Default separators used are '|', '-' and '+'
 	pub fn separators(&mut self, col: char, line: char, cross: char) {
 		self.col_sep = col;
 		self.line_sep = line;
@@ -166,7 +162,50 @@ impl Table {
 	}
 }
 
+impl fmt::Display for Table {
+	fn fmt(&self, fmt: &mut fmt::Formatter) -> Result<(), fmt::Error> {
+		let mut writer =  StringWriter::new();
+		if let Err(_) = self.print(&mut writer) {
+			return Err(fmt::Error)
+		}
+		return write!(fmt, "{}", writer.as_string());
+	}
+}
+
+/// Internal utility for writing data into a string
+struct StringWriter {
+	string: String
+}
+
+impl StringWriter {
+	/// Create a new `StringWriter`
+	fn new() -> StringWriter {
+		return StringWriter{string: String::new()};
+	}
+	
+	/// Return a reference to the internal written `String`
+	fn as_string(&self) -> &String {
+		return &self.string;
+	}
+}
+
+impl Write for StringWriter {
+	fn write(&mut self, data: &[u8]) -> Result<usize, Error> {
+		let string = match str::from_utf8(data) {
+			Ok(s) => s,
+			Err(e) => return Err(Error::new(ErrorKind::Other, format!("Cannot decode utf8 string : {}", e)))
+		};
+		self.string.push_str(string);
+		return Ok(data.len());
+	}
+	
+	fn flush(&mut self) -> Result<(), Error> {
+		return Ok(());
+	}
+}
+
 /// Create a table with column's titles from arguments.
+///
 /// The table can also be initialized with some values.
 /// All the arguments used for titles and elements must implement the `std::string::ToString` trait
 /// # Syntax
@@ -186,7 +225,7 @@ impl Table {
 /// 				 );
 /// # drop(tab);
 /// # }
-///```
+/// ```
 #[macro_export]
 macro_rules! table {
 	([$($title: expr), *]) => ($crate::Table::new(vec![$($title.to_string()), *]));
@@ -197,8 +236,35 @@ macro_rules! table {
 			let mut tab = table!([$($title), *]);
 			$(
 				let row = vec![$($key.to_string()), *];
-				tab.add_row(row).ok().expect("Cannot create table from macro");
+				if let Err(e) = tab.add_row(row) {
+					panic!("Cannot create table from : {}", e);
+				}
 			)*
+			tab
+		}
+	)
+}
+
+/// Create a table with `table!` macro, print it to standard output, then return this table for future usage.
+/// 
+/// The syntax is the same that the one for the `table!` macro
+/// # Panic
+/// May panic if some rows could not be inserted
+#[macro_export]
+macro_rules! ptable {
+	([$($title: expr), *]) => (
+		{
+			let tab = table!([$($title), *]);
+			tab.printstd();
+			tab
+		}
+	);
+	(
+		[$($title: expr), *], $([$($key:expr), *]), *
+	) => (
+		{
+			let tab = table!([$($title), *], $([$($key), *]), *);
+			tab.printstd();
 			tab
 		}
 	)

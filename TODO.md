@@ -6,6 +6,7 @@
 * Capability to not use line separators 
 * Capability to hide titles
 * Dynamic column number
+* Capability to store tables into tables (Yo dawg ;))
 
 ## Improvements :
 * Improve checkings in table! macro. Prevent it from panicking
