@@ -1,30 +1,40 @@
-extern crate tabprint;
-use tabprint::Table;
+use prettytable::{Table, Row, Cell, row, table, ptable};
 
 /*
-	Following main function will print :
-	+---------+------+---------+
-	| ABC     | DEFG | HIJKLMN |
-	+---------+------+---------+
-	| foobar  | bar  | foo     |
-	+---------+------+---------+
-	| foobar2 | bar2 | foo2    |
-	+---------+------+---------+
-	Modified : 
-	+---------+------+---------+
-	| ABC     | DEFG | HIJKLMN |
-	+---------+------+---------+
-	| foobar  | bar  | foo     |
-	+---------+------+---------+
-	| foobar2 | bar2 | new_foo |
-	+---------+------+---------+
+    Following main function will print :
+    +---------+------+---------+
+    | ABC     | DEFG | HIJKLMN |
+    +---------+------+---------+
+    | foobar  | bar  | foo     |
+    +---------+------+---------+
+    | foobar2 | bar2 | foo2    |
+    +---------+------+---------+
+    Modified :
+    +---------+------+---------+
+    | ABC     | DEFG | HIJKLMN |
+    +---------+------+---------+
+    | foobar  | bar  | foo     |
+    +---------+------+---------+
+    | foobar2 | bar2 | new_foo |
+    +---------+------+---------+
 */
 fn main() {
-    let mut table = Table::new(vec!["ABC".to_string(), "DEFG".to_string(), "HIJKLMN".to_string()]);
-    table.add_row(vec!["foobar".to_string(), "bar".to_string(), "foo".to_string()]).unwrap();
-    table.add_row(vec!["foobar2".to_string(), "bar2".to_string(), "foo2".to_string()]).unwrap();
+    let mut table = Table::new();
+    table.add_row(row!["ABC", "DEFG", "HIJKLMN"]);
+    table.add_row(row!["foobar", "bar", "foo"]);
+    table.add_row(Row::new(vec![Cell::new("foobar2"), Cell::new("bar2"), Cell::new("foo2")]));
     table.printstd();
     println!("Modified : ");
-    table.set_element("new_foo".to_string(), 2, 1).unwrap();
+    table.set_element("new_foo", 2, 1).unwrap();
     table.printstd();
+
+    // The same table can be built the following way :
+    let _table = table!(["ABC", "DEFG", "HIJKLMN"],
+                        ["foobar", "bar", "foo"],
+                        ["foobar2", "bar2", "foo2"]);
+
+    // Or directly print it like this
+    let _table = ptable!(["ABC", "DEFG", "HIJKLMN"],
+                         ["foobar", "bar", "foo"],
+                         ["foobar2", "bar2", "foo2"]);
 }
